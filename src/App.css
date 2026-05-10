@@ -285,6 +285,41 @@ body {
   display: flex; flex-direction: column; gap: 20px;
   animation: slideUp 0.4s ease;
 }
+
+/* ─── Summary breakdown table ───────────────────────────────────────── */
+.summary-breakdown {
+  margin-top: 24px;
+  display: flex; flex-direction: column; gap: 8px;
+}
+.breakdown-title {
+  font-size: 11px; font-weight: 500; text-transform: uppercase;
+  letter-spacing: 0.08em; color: var(--ink-soft); margin-bottom: 4px;
+}
+.summary-bd-row {
+  display: grid;
+  grid-template-columns: 10px 80px 1fr 56px 40px;
+  align-items: center;
+  gap: 8px;
+  font-size: 12px;
+}
+.summary-bd-label { color: var(--ink); font-size: 12px; }
+.summary-bd-bar-wrap {
+  height: 6px; background: var(--border);
+  border-radius: 99px; overflow: hidden;
+}
+.summary-bd-bar {
+  height: 100%; border-radius: 99px;
+  transition: width 0.5s ease;
+}
+.summary-bd-val {
+  font-variant-numeric: tabular-nums;
+  font-size: 11px; color: var(--ink);
+  text-align: right;
+}
+.summary-bd-pct {
+  font-size: 11px; color: var(--ink-soft);
+  text-align: right;
+}
 .summary-card {
   background: var(--bg-card);
   border: 1px solid var(--border);

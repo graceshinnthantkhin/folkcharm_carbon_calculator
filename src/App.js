@@ -16,10 +16,6 @@ function PieChart({ breakdown, total, size = 220 }) {
     transport: "#8fbc8f", electricity: "#d4a853",
     water: "#7bb8d4", tailoring: "#c4956a",
   };
-  const labels = {
-    transport: "Transport", electricity: "Electricity",
-    water: "Water", tailoring: "Tailoring",
-  };
 
   const cx = size / 2, cy = size / 2, r = size * 0.42;
   const labelR = r * 0.68;
@@ -49,53 +45,23 @@ function PieChart({ breakdown, total, size = 220 }) {
   });
 
   return (
-    <div style={{ display: "flex", alignItems: "center", gap: 32 }}>
-
-      {/* Left: pie + total */}
-      <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 10 }}>
-        <svg width={size} height={size} viewBox={`0 0 ${size} ${size}`}>
-          {slices.map(({ key, path }) => (
-            <path key={key} d={path} fill={colors[key]} stroke="#fdfaf4" strokeWidth="2" />
-          ))}
-          {slices.map(({ key, val, pct, lx, ly }) => pct > 0.06 && (
-            <g key={key + "-label"}>
-              <text x={lx} y={ly - 6} textAnchor="middle" fontSize="10" fontWeight="600"
-                fill="white" fontFamily="DM Sans, sans-serif">
-                {val.toFixed(4)}
-              </text>
-              <text x={lx} y={ly + 7} textAnchor="middle" fontSize="9"
-                fill="white" fontFamily="DM Sans, sans-serif">
-                {(pct * 100).toFixed(1)}%
-              </text>
-            </g>
-          ))}
-        </svg>
-
-        <div style={{ textAlign: "center", lineHeight: 1.5 }}>
-          <div style={{ fontSize: 10, color: "#7a6a52", textTransform: "uppercase", letterSpacing: "0.08em" }}>
-            Total
-          </div>
-          <div style={{ fontSize: 16, fontWeight: 600, color: "#2c2416", fontVariantNumeric: "tabular-nums" }}>
-            {total.toFixed(4)}{" "}
-            <span style={{ fontSize: 10, color: "#7a6a52" }}>kg CO₂e</span>
-          </div>
-        </div>
-      </div>
-
-      {/* Right: legend — dot + name only */}
-      <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
-        {Object.entries(labels).map(([key, label]) => (
-          <div key={key} style={{ display: "flex", alignItems: "center", gap: 8 }}>
-            <span style={{
-              width: 10, height: 10, borderRadius: "50%",
-              background: colors[key], flexShrink: 0, display: "inline-block",
-            }} />
-            <span style={{ fontSize: 13, color: "#7a6a52" }}>{label}</span>
-          </div>
-        ))}
-      </div>
-
-    </div>
+    <svg width={size} height={size} viewBox={`0 0 ${size} ${size}`}>
+      {slices.map(({ key, path }) => (
+        <path key={key} d={path} fill={colors[key]} stroke="#fdfaf4" strokeWidth="2" />
+      ))}
+      {slices.map(({ key, val, pct, lx, ly }) => pct > 0.06 && (
+        <g key={key + "-label"}>
+          <text x={lx} y={ly - 6} textAnchor="middle" fontSize="10" fontWeight="600"
+            fill="white" fontFamily="DM Sans, sans-serif">
+            {val.toFixed(4)}
+          </text>
+          <text x={lx} y={ly + 7} textAnchor="middle" fontSize="9"
+            fill="white" fontFamily="DM Sans, sans-serif">
+            {(pct * 100).toFixed(1)}%
+          </text>
+        </g>
+      ))}
+    </svg>
   );
 }
 
@@ -241,9 +207,42 @@ function ResultsPage({ result, onReset }) {
               </div>
             )}
           </div>
+
+          {/* Breakdown table under the number blocks */}
+          <div className="summary-breakdown">
+            <p className="breakdown-title">Combined emission breakdown</p>
+            {Object.entries(combined).map(([key, val]) => {
+              const colors = {
+                transport: "#8fbc8f", electricity: "#d4a853",
+                water: "#7bb8d4", tailoring: "#c4956a",
+              };
+              const labels = {
+                transport: "Transport", electricity: "Electricity",
+                water: "Water", tailoring: "Tailoring",
+              };
+              const pct = grandTotal > 0 ? ((val / grandTotal) * 100).toFixed(1) : "0.0";
+              return (
+                <div key={key} className="summary-bd-row">
+                  <span className="legend-dot" style={{ background: colors[key] }} />
+                  <span className="summary-bd-label">{labels[key]}</span>
+                  <div className="summary-bd-bar-wrap">
+                    <div
+                      className="summary-bd-bar"
+                      style={{
+                        width: `${pct}%`,
+                        background: colors[key],
+                      }}
+                    />
+                  </div>
+                  <span className="summary-bd-val">{val.toFixed(4)}</span>
+                  <span className="summary-bd-pct">{pct}%</span>
+                </div>
+              );
+            })}
+          </div>
         </div>
 
-        {/* Pie only — legend is built into PieChart */}
+        {/* Pie */}
         <div className="summary-pie">
           <PieChart breakdown={combined} total={grandTotal} size={220} />
         </div>
