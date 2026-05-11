@@ -1,7 +1,5 @@
 import React, { useState } from "react";
 import { useCalculator, useMonthlyCalculator } from "./hooks/useCalculator";
-import DatePicker from "react-datepicker";
-import "react-datepicker/dist/react-datepicker.css";
 import "./App.css";
 
 function LeafIcon() {
@@ -85,29 +83,66 @@ function ModeSelector({ onSelect }) {
 }
 
 // ─── Monthly range form ───────────────────────────────────────────────────────
+function MonthPicker({ label, month, year, onChange }) {
+  const [open, setOpen] = React.useState(false);
+  const [viewYear, setViewYear] = React.useState(year);
+
+  const short = ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"];
+  const full  = ["January","February","March","April","May","June","July","August","September","October","November","December"];
+
+  function select(i) {
+    onChange({ month: full[i], year: viewYear });
+    setOpen(false);
+  }
+
+  // Close on outside click
+  React.useEffect(() => {
+    if (!open) return;
+    function handle(e) {
+      if (!e.target.closest(".mp-wrap")) setOpen(false);
+    }
+    document.addEventListener("mousedown", handle);
+    return () => document.removeEventListener("mousedown", handle);
+  }, [open]);
+
+  return (
+    <div className="mp-wrap">
+      <p className="field-label">{label}</p>
+      <button className="mp-trigger" onClick={() => { setOpen(!open); setViewYear(year); }}>
+        <span>{month} {year}</span>
+        <span className="mp-caret">{open ? "▴" : "▾"}</span>
+      </button>
+
+      {open && (
+        <div className="mp-dropdown">
+          <div className="mp-year-nav">
+            <button className="mp-year-btn" onClick={() => setViewYear(v => v - 1)}>‹</button>
+            <span className="mp-year-label">{viewYear}</span>
+            <button className="mp-year-btn" onClick={() => setViewYear(v => v + 1)}>›</button>
+          </div>
+          <div className="mp-grid">
+            {short.map((m, i) => (
+              <button
+                key={m}
+                className={`mp-month ${full[i] === month && viewYear === year ? "mp-month--active" : ""} ${full[i] === full[new Date().getMonth()] && viewYear === new Date().getFullYear() ? "mp-month--today" : ""}`}
+                onClick={() => select(i)}
+              >
+                {m}
+              </button>
+            ))}
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
 function MonthlyForm({ hook, onBack }) {
-  const { fromMonth, setFromMonth, fromYear, setFromYear,
-          toMonth, setToMonth, toYear, setToYear,
-          loading, error, calculate } = hook;
-
-  const fullMonths = [
-    "January","February","March","April","May","June",
-    "July","August","September","October","November","December"
-  ];
-
-  // Convert month name + year to Date object for the picker
-  const fromDate = new Date(fromYear, fullMonths.indexOf(fromMonth), 1);
-  const toDate   = new Date(toYear,   fullMonths.indexOf(toMonth),   1);
-
-  function handleFromChange(date) {
-    setFromMonth(fullMonths[date.getMonth()]);
-    setFromYear(date.getFullYear());
-  }
-
-  function handleToChange(date) {
-    setToMonth(fullMonths[date.getMonth()]);
-    setToYear(date.getFullYear());
-  }
+  const {
+    fromMonth, setFromMonth, fromYear, setFromYear,
+    toMonth, setToMonth, toYear, setToYear,
+    loading, error, calculate,
+  } = hook;
 
   return (
     <div className="form-area">
@@ -118,34 +153,24 @@ function MonthlyForm({ hook, onBack }) {
 
       <div className="product-input-card">
         <div className="monthly-range">
-          <div className="field">
-            <label className="field-label">From Month</label>
-            <DatePicker
-              selected={fromDate}
-              onChange={handleFromChange}
-              dateFormat="MMMM yyyy"
-              showMonthYearPicker
-              showFullMonthYearPicker
-              className="field-input"
-            />
+          <MonthPicker
+            label="From Month"
+            month={fromMonth}
+            year={fromYear}
+            onChange={({ month, year }) => { setFromMonth(month); setFromYear(year); }}
+          />
+          <div className="monthly-divider">
+            <div className="monthly-divider-line" />
+            <div className="monthly-arrow">→</div>
+            <div className="monthly-divider-line" />
           </div>
-
-          <div className="monthly-arrow">→</div>
-
-          <div className="field">
-            <label className="field-label">To Month</label>
-            <DatePicker
-              selected={toDate}
-              onChange={handleToChange}
-              dateFormat="MMMM yyyy"
-              showMonthYearPicker
-              showFullMonthYearPicker
-              minDate={fromDate}
-              className="field-input"
-            />
-          </div>
+          <MonthPicker
+            label="To Month"
+            month={toMonth}
+            year={toYear}
+            onChange={({ month, year }) => { setToMonth(month); setToYear(year); }}
+          />
         </div>
-
         {error && <p className="monthly-error">{error}</p>}
       </div>
 

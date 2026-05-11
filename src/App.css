@@ -445,124 +445,143 @@ body {
 .mode-label { font-size: 14px; font-weight: 600; color: var(--ink); }
 .mode-desc  { font-size: 11px; color: var(--ink-soft); line-height: 1.4; }
 
-/* ─── Form nav (back button) ────────────────────────────────────────── */
+/* ─── Form nav ──────────────────────────────────────────────────────── */
 .form-nav {
-  display: flex; align-items: center; gap: 12px; margin-bottom: 4px;
+  display: flex; align-items: center; gap: 12px; margin-bottom: 16px;
 }
 .btn-back {
-  background: none; border: none; cursor: pointer;
-  font-size: 13px; color: var(--ink-soft);
-  font-family: 'DM Sans', sans-serif;
-  padding: 4px 0; transition: color 0.2s;
-}
-.btn-back:hover { color: var(--accent); }
-
-/* ─── Monthly range form ────────────────────────────────────────────── */
-.monthly-range {
-  display: flex;
-  align-items: flex-end;
-  gap: 12px;
-  flex-wrap: wrap;
-}
-.monthly-range .field {
-  flex: 1;
-  min-width: 160px;
-  margin-bottom: 0;
-}
-.monthly-arrow {
-  font-size: 18px;
-  color: var(--ink-soft);
-  padding-bottom: 14px;
-  flex-shrink: 0;
-}
-.monthly-error {
-  margin-top: 12px;
-  font-size: 13px;
-  color: var(--warn);
-}
-
-/* ─── React DatePicker override ─────────────────────────────────────── */
-.react-datepicker-wrapper {
-  width: 100%;
-}
-.react-datepicker__input-container input {
-  width: 100%;
-  padding: 12px 16px;
+  display: inline-flex; align-items: center; gap: 6px;
+  background: white;
   border: 1px solid var(--border);
   border-radius: var(--radius-sm);
-  background: white;
-  font-family: 'DM Sans', sans-serif;
-  font-size: 15px;
-  color: var(--ink);
   cursor: pointer;
-  transition: border-color 0.2s, box-shadow 0.2s;
-  outline: none;
+  font-size: 13px; font-weight: 500;
+  color: var(--ink-soft);
+  font-family: 'DM Sans', sans-serif;
+  padding: 8px 14px;
+  transition: all 0.2s;
+  box-shadow: 0 1px 4px rgba(44,36,22,0.06);
 }
-.react-datepicker__input-container input:focus,
-.react-datepicker__input-container input:hover {
+.btn-back:hover {
+  border-color: var(--accent);
+  color: var(--accent);
+  background: var(--accent-soft);
+  box-shadow: none;
+}
+
+/* ─── Monthly range form ────────────────────────────────────────────── */
+.monthly-hint {
+  font-size: 13px; color: var(--ink-soft);
+  margin-bottom: 20px; line-height: 1.5;
+}
+.monthly-range {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 16px;
+  flex-wrap: wrap;
+}
+.monthly-divider {
+  display: flex; align-items: center; gap: 10px;
+  padding: 8px 0;
+}
+.monthly-divider-line {
+  flex: 1; height: 1px; background: var(--border);
+}
+.monthly-divider-label {
+  font-size: 11px; font-weight: 500; text-transform: uppercase;
+  letter-spacing: 0.1em; color: var(--ink-soft);
+}
+.monthly-error {
+  margin-top: 16px; font-size: 13px; color: var(--warn);
+  padding: 10px 14px; background: var(--warn-soft);
+  border-radius: var(--radius-sm);
+}
+.monthly-arrow {
+  font-size: 20px;
+  color: var(--ink-soft);
+  flex-shrink: 0;
+  padding-top: 24px;
+}
+
+/* ─── Month picker ──────────────────────────────────────────────────── */
+.mp-wrap {
+  position: relative;
+  width: 180px;
+}
+.mp-label {
+  display: block;
+  font-size: 12px; font-weight: 500;
+  letter-spacing: 0.08em; text-transform: uppercase;
+  color: var(--ink-soft); margin-bottom: 8px;
+}
+.mp-trigger {
+  display: flex; align-items: center; justify-content: space-between;
+  width: 100%; padding: 14px 18px;
+  background: var(--bg);
+  border: 1.5px solid var(--border);
+  border-radius: var(--radius-sm); cursor: pointer;
+  font-family: 'DM Sans', sans-serif; font-size: 16px; font-weight: 500;
+  color: var(--ink);
+  transition: border-color 0.2s, box-shadow 0.2s, background 0.2s;
+}
+.mp-trigger:hover { border-color: var(--accent); background: white; }
+.mp-trigger:focus {
+  outline: none;
   border-color: var(--accent);
   box-shadow: 0 0 0 3px rgba(74,124,89,0.12);
+  background: white;
 }
-.react-datepicker-popper {
-  z-index: 999 !important;
+.mp-caret { font-size: 11px; color: var(--ink-soft); }
+
+.mp-dropdown {
+  position: absolute; top: calc(100% + 8px); left: 0; right: 0; z-index: 999;
+  background: white;
+  border: 1.5px solid var(--accent);
+  border-radius: var(--radius); box-shadow: var(--shadow-lg);
+  padding: 16px;
+  animation: slideUp 0.2s ease;
 }
-.react-datepicker {
-  font-family: 'DM Sans', sans-serif !important;
-  border: 1px solid var(--border) !important;
-  border-radius: var(--radius) !important;
-  box-shadow: var(--shadow-lg) !important;
-  overflow: hidden !important;
+.mp-year-nav {
+  display: flex; align-items: center; justify-content: space-between;
+  margin-bottom: 14px; padding-bottom: 14px;
+  border-bottom: 1px solid var(--border);
 }
-.react-datepicker__header {
-  background: var(--bg-card) !important;
-  border-bottom: 1px solid var(--border) !important;
-  padding: 14px !important;
+.mp-year-label {
+  font-family: 'Playfair Display', serif;
+  font-size: 16px; font-weight: 600; color: var(--ink);
 }
-.react-datepicker__navigation {
-  top: 14px !important;
+.mp-year-btn {
+  background: var(--bg); border: 1px solid var(--border);
+  border-radius: 6px; cursor: pointer;
+  width: 32px; height: 32px; font-size: 18px; line-height: 1;
+  color: var(--ink-soft); display: flex; align-items: center; justify-content: center;
+  transition: all 0.2s;
 }
-.react-datepicker__navigation-icon::before {
-  border-color: var(--ink-soft) !important;
+.mp-year-btn:hover { border-color: var(--accent); color: var(--accent); background: var(--accent-soft); }
+
+.mp-grid {
+  display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px;
 }
-.react-datepicker__current-month {
-  font-family: 'Playfair Display', serif !important;
-  font-size: 15px !important;
-  font-weight: 600 !important;
-  color: var(--ink) !important;
+.mp-month {
+  padding: 10px 4px;
+  border: 1px solid transparent;
+  border-radius: var(--radius-sm);
+  background: transparent; cursor: pointer;
+  font-family: 'DM Sans', sans-serif; font-size: 13px;
+  color: var(--ink); transition: all 0.15s; text-align: center;
 }
-.react-datepicker__triangle {
-  display: none !important;
+.mp-month:hover {
+  background: var(--accent-soft);
+  border-color: rgba(74,124,89,0.2);
+  color: var(--accent);
 }
-.react-datepicker__month-wrapper {
-  display: flex !important;
-  justify-content: center !important;
-  gap: 4px !important;
-  padding: 2px 8px !important;
+.mp-month--active {
+  background: var(--accent);
+  border-color: var(--accent);
+  color: white; font-weight: 600;
 }
-.react-datepicker__month .react-datepicker__month-text {
-  width: 72px !important;
-  padding: 8px 4px !important;
-  margin: 3px !important;
-  border-radius: var(--radius-sm) !important;
-  font-size: 12.5px !important;
-  color: var(--ink) !important;
-  transition: all 0.15s !important;
+.mp-month--today {
+  font-weight: 700; color: var(--accent);
 }
-.react-datepicker__month-text:hover {
-  background: var(--accent-soft) !important;
-  color: var(--accent) !important;
-}
-.react-datepicker__month-text--selected {
-  background: var(--accent) !important;
-  color: white !important;
-  font-weight: 600 !important;
-}
-.react-datepicker__month-text--keyboard-selected {
-  background: var(--accent-soft) !important;
-  color: var(--accent) !important;
-  font-weight: 500 !important;
-}
-.react-datepicker__month-text--today {
-  font-weight: 600 !important;
-  color: var(--accent) !important;
-}
+.mp-month--active.mp-month--today { color: white; }
