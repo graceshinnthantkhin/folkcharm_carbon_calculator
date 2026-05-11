@@ -3,6 +3,7 @@ import { useState, useEffect } from "react";
 // ─── Sheet URLs ───────────────────────────────────────────────────────────────
 const PRODUCTS_URL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vQphA_aegbFA_wzU5etl0TD5hnMYI23OivAmZrTTJ62J0_zTO55Ho8oZ_H_J9ISza6TuX_X3-SusaEb/pub?gid=877971675&single=true&output=csv"
 const FACTORS_URL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vQphA_aegbFA_wzU5etl0TD5hnMYI23OivAmZrTTJ62J0_zTO55Ho8oZ_H_J9ISza6TuX_X3-SusaEb/pub?gid=0&single=true&output=csv"
+const PRODUCTION_URL ="https://docs.google.com/spreadsheets/d/e/2PACX-1vQphA_aegbFA_wzU5etl0TD5hnMYI23OivAmZrTTJ62J0_zTO55Ho8oZ_H_J9ISza6TuX_X3-SusaEb/pub?gid=1914895149&single=true&output=csv"
 
 // ─── Categories (order for dropdown) ─────────────────────────────────────────
 const CATEGORIES = [
@@ -286,9 +287,107 @@ export function useCalculator() {
   return {
     categories: CATEGORIES,
     loading, error,
+    products, factors,
     items, updateItem, addItem, removeItem,
     titlesFor, sizesFor,
     result, calculate, reset,
     canCalculate,
+  };
+}
+
+const MONTHS = [
+  "January","February","March","April","May","June",
+  "July","August","September","October","November","December"
+];
+
+export function useMonthlyCalculator(products, factors) {
+  const [fromMonth, setFromMonth] = useState("January");
+  const [fromYear,  setFromYear]  = useState(2026);
+  const [toMonth,   setToMonth]   = useState("January");
+  const [toYear,    setToYear]    = useState(2026);
+  const [result,    setResult]    = useState(null);
+  const [loading,   setLoading]   = useState(false);
+  const [error,     setError]     = useState(null);
+
+  async function calculate() {
+    try {
+      setLoading(true);
+      setError(null);
+
+      const res  = await fetch(PRODUCTION_URL);
+      const text = await res.text();
+      const rows = parseCSV(text);
+
+      // Filter rows within the selected month/year range
+      const fromIdx = MONTHS.indexOf(fromMonth) + (fromYear * 12);
+      const toIdx   = MONTHS.indexOf(toMonth)   + (toYear   * 12);
+
+      const filtered = rows.filter((row) => {
+        const rowIdx = MONTHS.indexOf(row.month) + (parseInt(row.year) * 12);
+        return rowIdx >= fromIdx && rowIdx <= toIdx;
+      });
+
+      if (filtered.length === 0) {
+        setError("No production data found for the selected range.");
+        setLoading(false);
+        return;
+      }
+
+      // Calculate emissions for each production row
+      const results = filtered.map((row) => {
+        const product = products.find((p) => p.title === row.title);
+        if (!product) {
+          return {
+            id: row.title + row.month + row.year,
+            status: "not_found",
+            title: row.title,
+            month: row.month,
+            year: row.year,
+          };
+        }
+
+        const qty  = parseInt(row.quantity) || 1;
+        const calc = calculateEmissions(product, row.size, qty, factors);
+
+        return {
+          id: row.title + row.month + row.year + row.size,
+          status: "ok",
+          title:        product.title,
+          size:         row.size,
+          quantity:     qty,
+          month:        row.month,
+          year:         row.year,
+          pathway:      calc.pathway,
+          product_type: product.product_type,
+          dye_type:     product.dye_type || "—",
+          natural_dye:  product.natural_dye,
+          total_kg:     calc.total_kg,
+          avoided_kg:   calc.avoided_kg,
+          per_unit_kg:  calc.per_unit_kg,
+          breakdown:    calc.breakdown,
+        };
+      });
+
+      setResult(results);
+    } catch (err) {
+      setError("Could not load production data. Please try again.");
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  function reset() {
+    setResult(null);
+    setError(null);
+  }
+
+  return {
+    months: MONTHS,
+    fromMonth, setFromMonth,
+    fromYear,  setFromYear,
+    toMonth,   setToMonth,
+    toYear,    setToYear,
+    result, loading, error,
+    calculate, reset,
   };
 }

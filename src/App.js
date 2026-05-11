@@ -1,5 +1,7 @@
-import React from "react";
-import { useCalculator } from "./hooks/useCalculator";
+import React, { useState } from "react";
+import { useCalculator, useMonthlyCalculator } from "./hooks/useCalculator";
+import DatePicker from "react-datepicker";
+import "react-datepicker/dist/react-datepicker.css";
 import "./App.css";
 
 function LeafIcon() {
@@ -16,11 +18,14 @@ function PieChart({ breakdown, total, size = 220 }) {
     transport: "#8fbc8f", electricity: "#d4a853",
     water: "#7bb8d4", tailoring: "#c4956a",
   };
+  const labels = {
+    transport: "Transport", electricity: "Electricity",
+    water: "Water", tailoring: "Tailoring",
+  };
 
   const cx = size / 2, cy = size / 2, r = size * 0.42;
   const labelR = r * 0.68;
-
-  const entries = Object.entries(breakdown).filter(([, v]) => v > 0);
+  const entries = Object.entries(breakdown).filter(([, v]) => v > 0.00001);
   let cumulative = 0;
 
   const slices = entries.map(([key, val]) => {
@@ -29,18 +34,14 @@ function PieChart({ breakdown, total, size = 220 }) {
     cumulative += pct;
     const endAngle = cumulative * 2 * Math.PI - Math.PI / 2;
     const midAngle = (startAngle + endAngle) / 2;
-
     const x1 = cx + r * Math.cos(startAngle), y1 = cy + r * Math.sin(startAngle);
     const x2 = cx + r * Math.cos(endAngle),   y2 = cy + r * Math.sin(endAngle);
     const large = pct > 0.5 ? 1 : 0;
-
     const path = pct >= 0.9999
       ? `M ${cx} ${cy} m -${r} 0 a ${r} ${r} 0 1 1 ${r*2} 0 a ${r} ${r} 0 1 1 -${r*2} 0`
       : `M ${cx} ${cy} L ${x1} ${y1} A ${r} ${r} 0 ${large} 1 ${x2} ${y2} Z`;
-
     const lx = cx + labelR * Math.cos(midAngle);
     const ly = cy + labelR * Math.sin(midAngle);
-
     return { key, val, pct, path, lx, ly };
   });
 
@@ -49,19 +50,109 @@ function PieChart({ breakdown, total, size = 220 }) {
       {slices.map(({ key, path }) => (
         <path key={key} d={path} fill={colors[key]} stroke="#fdfaf4" strokeWidth="2" />
       ))}
-      {slices.map(({ key, val, pct, lx, ly }) => pct > 0.06 && (
+      {slices.map(({ key, pct, lx, ly }) => pct > 0.06 && (
         <g key={key + "-label"}>
           <text x={lx} y={ly - 6} textAnchor="middle" fontSize="10" fontWeight="600"
-            fill="white" fontFamily="DM Sans, sans-serif">
-            {val.toFixed(4)}
-          </text>
+            fill="white" fontFamily="DM Sans, sans-serif">{labels[key]}</text>
           <text x={lx} y={ly + 7} textAnchor="middle" fontSize="9"
-            fill="white" fontFamily="DM Sans, sans-serif">
-            {(pct * 100).toFixed(1)}%
-          </text>
+            fill="white" fontFamily="DM Sans, sans-serif">{(pct * 100).toFixed(1)}%</text>
         </g>
       ))}
     </svg>
+  );
+}
+
+// ─── Mode selector ────────────────────────────────────────────────────────────
+function ModeSelector({ onSelect }) {
+  return (
+    <div className="mode-card">
+      <h2 className="form-heading">Calculate Emissions</h2>
+      <p className="mode-subtitle">Choose your calculation mode</p>
+      <div className="mode-options">
+        <button className="mode-option" onClick={() => onSelect("batch")}>
+          <span className="mode-icon">📦</span>
+          <span className="mode-label">Per Batch</span>
+          <span className="mode-desc">Select products and quantities manually</span>
+        </button>
+        <button className="mode-option" onClick={() => onSelect("monthly")}>
+          <span className="mode-icon">📅</span>
+          <span className="mode-label">Monthly Range</span>
+          <span className="mode-desc">Aggregate production data by month</span>
+        </button>
+      </div>
+    </div>
+  );
+}
+
+// ─── Monthly range form ───────────────────────────────────────────────────────
+function MonthlyForm({ hook, onBack }) {
+  const { fromMonth, setFromMonth, fromYear, setFromYear,
+          toMonth, setToMonth, toYear, setToYear,
+          loading, error, calculate } = hook;
+
+  const fullMonths = [
+    "January","February","March","April","May","June",
+    "July","August","September","October","November","December"
+  ];
+
+  // Convert month name + year to Date object for the picker
+  const fromDate = new Date(fromYear, fullMonths.indexOf(fromMonth), 1);
+  const toDate   = new Date(toYear,   fullMonths.indexOf(toMonth),   1);
+
+  function handleFromChange(date) {
+    setFromMonth(fullMonths[date.getMonth()]);
+    setFromYear(date.getFullYear());
+  }
+
+  function handleToChange(date) {
+    setToMonth(fullMonths[date.getMonth()]);
+    setToYear(date.getFullYear());
+  }
+
+  return (
+    <div className="form-area">
+      <div className="form-nav">
+        <button className="btn-back" onClick={onBack}>← Back</button>
+        <h2 className="form-heading">Monthly Range</h2>
+      </div>
+
+      <div className="product-input-card">
+        <div className="monthly-range">
+          <div className="field">
+            <label className="field-label">From Month</label>
+            <DatePicker
+              selected={fromDate}
+              onChange={handleFromChange}
+              dateFormat="MMMM yyyy"
+              showMonthYearPicker
+              showFullMonthYearPicker
+              className="field-input"
+            />
+          </div>
+
+          <div className="monthly-arrow">→</div>
+
+          <div className="field">
+            <label className="field-label">To Month</label>
+            <DatePicker
+              selected={toDate}
+              onChange={handleToChange}
+              dateFormat="MMMM yyyy"
+              showMonthYearPicker
+              showFullMonthYearPicker
+              minDate={fromDate}
+              className="field-input"
+            />
+          </div>
+        </div>
+
+        {error && <p className="monthly-error">{error}</p>}
+      </div>
+
+      <button className="btn-primary" onClick={calculate} disabled={loading}>
+        {loading ? "Loading..." : "Calculate"}
+      </button>
+    </div>
   );
 }
 
@@ -69,49 +160,39 @@ function PieChart({ breakdown, total, size = 220 }) {
 function ProductInputCard({ item, index, categories, titlesFor, sizesFor, onUpdate, onRemove, removable }) {
   const titles = titlesFor(item.category);
   const sizes  = sizesFor(item.title);
-
   return (
     <div className="product-input-card">
       <div className="pic-header">
         <span className="pic-index">Product {index + 1}</span>
-        {removable && (
-          <button className="btn-remove" onClick={() => onRemove(item.id)} title="Remove">✕</button>
-        )}
+        {removable && <button className="btn-remove" onClick={() => onRemove(item.id)} title="Remove">✕</button>}
       </div>
-
       <div className="field">
         <label className="field-label">Category</label>
         <div className="select-wrapper">
-          <select className="field-select" value={item.category}
-            onChange={(e) => onUpdate(item.id, "category", e.target.value)}>
+          <select className="field-select" value={item.category} onChange={(e) => onUpdate(item.id, "category", e.target.value)}>
             <option value="">— Select a category —</option>
             {categories.map((c) => <option key={c} value={c}>{c}</option>)}
           </select>
         </div>
       </div>
-
       <div className="field">
         <label className="field-label">Product</label>
         <div className="select-wrapper">
-          <select className="field-select" value={item.title} disabled={!item.category}
-            onChange={(e) => onUpdate(item.id, "title", e.target.value)}>
+          <select className="field-select" value={item.title} disabled={!item.category} onChange={(e) => onUpdate(item.id, "title", e.target.value)}>
             <option value="">— Select a product —</option>
             {titles.map((t) => <option key={t} value={t}>{t}</option>)}
           </select>
         </div>
       </div>
-
       <div className="field">
         <label className="field-label">Size</label>
         <div className="select-wrapper">
-          <select className="field-select" value={item.size} disabled={!item.title}
-            onChange={(e) => onUpdate(item.id, "size", e.target.value)}>
+          <select className="field-select" value={item.size} disabled={!item.title} onChange={(e) => onUpdate(item.id, "size", e.target.value)}>
             <option value="">— Select a size —</option>
             {sizes.map((s) => <option key={s} value={s}>{s}</option>)}
           </select>
         </div>
       </div>
-
       <div className="field">
         <label className="field-label">Quantity</label>
         <input type="number" className="field-input" min="1" value={item.quantity}
@@ -140,7 +221,10 @@ function ResultRow({ r, index }) {
         <span className="rr-index">#{index + 1}</span>
         <div className="rr-info">
           <span className="rr-title">{r.title}</span>
-          <span className="rr-meta">{r.product_type} · Size {r.size} · qty {r.quantity} · {r.dye_type}</span>
+          <span className="rr-meta">
+            {r.product_type} · Size {r.size} · qty {r.quantity} · {r.dye_type}
+            {r.month && ` · ${r.month} ${r.year}`}
+          </span>
         </div>
         <div className="rr-nums">
           <div className="rr-total">
@@ -155,13 +239,12 @@ function ResultRow({ r, index }) {
           )}
         </div>
       </div>
-
       <div className="rr-breakdown">
         {Object.entries(r.breakdown).map(([key, val]) => (
           <div key={key} className="rr-bd-item">
             <span className="legend-dot" style={{ background: colors[key] }} />
             <span>{labels[key]}</span>
-            <span className="rr-bd-val">{val.toFixed(4)}</span>
+            <span className="rr-bd-val">{val.toFixed(4)} <span style={{ fontSize: 10, color: "var(--ink-soft)" }}>kg CO₂e</span></span>
           </div>
         ))}
       </div>
@@ -170,27 +253,26 @@ function ResultRow({ r, index }) {
 }
 
 // ─── Results page ─────────────────────────────────────────────────────────────
-function ResultsPage({ result, onReset }) {
+function ResultsPage({ result, onReset, mode, monthRange }) {
   const ok = result.filter((r) => r.status === "ok");
-
   const grandTotal   = ok.reduce((s, r) => s + r.total_kg,   0);
   const grandAvoided = ok.reduce((s, r) => s + r.avoided_kg, 0);
-
   const combined = ok.reduce((acc, r) => {
     Object.entries(r.breakdown).forEach(([k, v]) => { acc[k] = (acc[k] || 0) + v; });
     return acc;
   }, { transport: 0, electricity: 0, water: 0, tailoring: 0 });
 
+  const colors = { transport: "#8fbc8f", electricity: "#d4a853", water: "#7bb8d4", tailoring: "#c4956a" };
+  const labels = { transport: "Transport", electricity: "Electricity", water: "Water", tailoring: "Tailoring" };
+
   return (
     <div className="results-page">
-
-      {/* Summary card */}
       <div className="summary-card">
         <div className="summary-left">
           <div className="result-header">
             <LeafIcon />
             <span className="pathway-badge">
-              {result.length} product{result.length > 1 ? "s" : ""} calculated
+              {mode === "monthly" ? `${monthRange} · ` : ""}{ok.length} product{ok.length !== 1 ? "s" : ""} calculated
             </span>
           </div>
           <div className="summary-nums">
@@ -208,33 +290,18 @@ function ResultsPage({ result, onReset }) {
             )}
           </div>
 
-          {/* Breakdown table under the number blocks */}
           <div className="summary-breakdown">
             <p className="breakdown-title">Combined emission breakdown</p>
             {Object.entries(combined).map(([key, val]) => {
-              const colors = {
-                transport: "#8fbc8f", electricity: "#d4a853",
-                water: "#7bb8d4", tailoring: "#c4956a",
-              };
-              const labels = {
-                transport: "Transport", electricity: "Electricity",
-                water: "Water", tailoring: "Tailoring",
-              };
               const pct = grandTotal > 0 ? ((val / grandTotal) * 100).toFixed(1) : "0.0";
               return (
                 <div key={key} className="summary-bd-row">
                   <span className="legend-dot" style={{ background: colors[key] }} />
                   <span className="summary-bd-label">{labels[key]}</span>
                   <div className="summary-bd-bar-wrap">
-                    <div
-                      className="summary-bd-bar"
-                      style={{
-                        width: `${pct}%`,
-                        background: colors[key],
-                      }}
-                    />
+                    <div className="summary-bd-bar" style={{ width: `${pct}%`, background: colors[key] }} />
                   </div>
-                  <span className="summary-bd-val">{val.toFixed(4)}</span>
+                  <span className="summary-bd-val">{val.toFixed(4)} <span style={{ fontSize: 10, color: "var(--ink-soft)" }}>kg CO₂e</span></span>
                   <span className="summary-bd-pct">{pct}%</span>
                 </div>
               );
@@ -242,13 +309,11 @@ function ResultsPage({ result, onReset }) {
           </div>
         </div>
 
-        {/* Pie */}
         <div className="summary-pie">
           <PieChart breakdown={combined} total={grandTotal} size={220} />
         </div>
       </div>
 
-      {/* Per-product rows */}
       <div className="result-rows">
         <p className="section-label">Per Product</p>
         {result.map((r, i) => <ResultRow key={r.id} r={r} index={i} />)}
@@ -264,11 +329,31 @@ function ResultsPage({ result, onReset }) {
 
 // ─── Main App ─────────────────────────────────────────────────────────────────
 export default function App() {
+  const [mode, setMode] = useState(null); // null | "batch" | "monthly"
+
   const {
     categories, loading, error,
     items, updateItem, addItem, removeItem,
-    titlesFor, sizesFor, result, calculate, reset, canCalculate,
+    titlesFor, sizesFor,
+    result: batchResult, calculate: batchCalculate,
+    reset: batchReset, canCalculate,
+    products, factors,
   } = useCalculator();
+
+  const monthlyHook = useMonthlyCalculator(products, factors);
+  const { result: monthlyResult, reset: monthlyReset } = monthlyHook;
+
+  function handleReset() {
+    if (mode === "batch") batchReset();
+    else monthlyReset();
+    setMode(null);
+  }
+
+  const activeResult = mode === "batch" ? batchResult : monthlyResult;
+
+  const monthRange = mode === "monthly"
+    ? `${monthlyHook.fromMonth} ${monthlyHook.fromYear} – ${monthlyHook.toMonth} ${monthlyHook.toYear}`
+    : "";
 
   return (
     <div className="app">
@@ -292,36 +377,33 @@ export default function App() {
             <div className="not-found-icon">⚠</div>
             <p className="status-text">{error}</p>
           </div>
-        ) : !result ? (
+        ) : activeResult ? (
+          <ResultsPage result={activeResult} onReset={handleReset} mode={mode} monthRange={monthRange} />
+        ) : !mode ? (
+          <ModeSelector onSelect={setMode} />
+        ) : mode === "batch" ? (
           <div className="form-area">
-            <h2 className="form-heading">Calculate Emissions</h2>
-
+            <div className="form-nav">
+              <button className="btn-back" onClick={() => setMode(null)}>← Back</button>
+              <h2 className="form-heading">Per Batch</h2>
+            </div>
             <div className="product-cards-list">
               {items.map((item, index) => (
                 <ProductInputCard
-                  key={item.id}
-                  item={item}
-                  index={index}
-                  categories={categories}
-                  titlesFor={titlesFor}
-                  sizesFor={sizesFor}
-                  onUpdate={updateItem}
-                  onRemove={removeItem}
-                  removable={items.length > 1}
+                  key={item.id} item={item} index={index}
+                  categories={categories} titlesFor={titlesFor} sizesFor={sizesFor}
+                  onUpdate={updateItem} onRemove={removeItem} removable={items.length > 1}
                 />
               ))}
             </div>
-
             <button className="btn-add" onClick={addItem}>+ Add another product</button>
-
-            <button className="btn-primary" onClick={calculate} disabled={!canCalculate}>
-              Calculate
-            </button>
+            <button className="btn-primary" onClick={batchCalculate} disabled={!canCalculate}>Calculate</button>
           </div>
         ) : (
-          <ResultsPage result={result} onReset={reset} />
+          <MonthlyForm hook={monthlyHook} onBack={() => setMode(null)} />
         )}
       </main>
+
       <footer className="app-footer">
         <p>Internal tool · Folkcharm URD-202 · Not for external distribution</p>
       </footer>
