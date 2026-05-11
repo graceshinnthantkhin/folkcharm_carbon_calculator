@@ -200,25 +200,15 @@ export function useCalculator() {
   // Sizes for a product — reads from sizes column (pipe-separated) or falls back to all size keys
   function sizesFor(title) {
     if (!title) return [];
-    const product = products.find((r) => r.title === title);
-    if (!product) return [];
-
-    if (product.sizes && product.sizes.trim()) {
-      return product.sizes.split("|").map((s) => s.trim()).filter(Boolean);
-    }
-
-    // fallback — derive from factors sheet size keys
-    if (factors) {
-      return Object.keys(factors)
-        .filter((k) => k.startsWith("size_"))
-        .map((k) => {
-          const raw = k.replace("size_", "");
-          if (raw === "l2") return "L+2";
-          return raw.toUpperCase();
-        });
-    }
-
-    return ["XS", "S", "M", "L", "XL", "XXL", "F", "L+2"];
+    const rows = products.filter((r) => r.title === title);
+    if (rows.length === 0) return [];
+  
+    const sizesRaw = rows[0].sizes || "";
+    if (!sizesRaw.trim()) return [];
+  
+    // Handle both "S, M, L" and "S|M|L" formats
+    const delimiter = sizesRaw.includes("|") ? "|" : ",";
+    return sizesRaw.split(delimiter).map((s) => s.trim()).filter(Boolean);
   }
 
   function updateItem(id, field, value) {
