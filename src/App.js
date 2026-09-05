@@ -221,7 +221,8 @@ function ProductInputCard({ item, index, categories, titlesFor, sizesFor, onUpda
       <div className="field">
         <label className="field-label">Quantity</label>
         <input type="number" className="field-input" min="1" value={item.quantity}
-          onChange={(e) => onUpdate(item.id, "quantity", Math.max(1, parseInt(e.target.value) || 1))} />
+          onChange={(e) => onUpdate(item.id, "quantity", e.target.value)}
+          onBlur={(e) => onUpdate(item.id, "quantity", Math.max(1, parseInt(e.target.value) || 1))} />
       </div>
     </div>
   );
